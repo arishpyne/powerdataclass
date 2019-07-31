@@ -1,0 +1,6 @@
+# testing
+pytest
+pycodestyle
+
+# build
+twine
