@@ -8,7 +8,7 @@
 `pip install powerdataclass`
 
 ## Usage
-Python 3.7 have introduced a spiritual successor of `NamedTyple`: the `dataclass`.
+Python 3.7 have introduced a spiritual successor of `NamedTuple`: the `dataclass`.
 While being nice, the `dataclass` type hinting is only, well, _hinting_.
 
 This library gives you an ability to create dataclasses with field values automatically casted to 
@@ -135,6 +135,26 @@ Fields will be topologically sorted by their dependencies and type casting will 
 3) d
 4) c
 
+You can use a combination of field handlers and dependent fields to declare calculated fields:
+        
+    @dataclasses.dataclass
+    class CubeSquarer(PowerDataclass):
+        n: int
+        n_square: int = field(default=None, metadata={FieldMeta.DEPENDS_ON_FIELDS: ['n']})
+        n_cube: int = powerdataclass.calculated_field(depends_on=['n'])
+
+        @register_pdc_field_handler('n_square')
+        def handle_n_square(self, v):
+            return self.n ** 2
+        
+        @register_pdc_field_handler('n_cube')
+        def handle_n_cube(self, v):
+            return self.n ** 3
+     
+    >>> CubeSquarer(4)
+    Squarer(n=4, n_square=16, n_cube=256)
+
+
 ## Other features
 Power Dataclasses support automatic recursive conversion to dict with the `.as_dict()` method.
 Power Dataclasses support automatic recursive conversion to and from JSON strings with the `.as_json()` and `.from_json()`  methods.
@@ -142,4 +162,4 @@ Power Dataclasses support automatic recursive conversion to and from JSON string
 
 
 ---
-Made with ⚡ by Arish Pyne
+Made with ⚡ by Arish Pyne (https://github.com/arishpyne/powerdataclass)
