@@ -3,7 +3,7 @@ import json
 from enum import Enum
 from functools import partial
 from typing import Mapping, Iterable, Any, Callable, TypeVar, List
-from dataclasses import field
+
 
 from toposort import toposort_flatten
 
@@ -99,6 +99,7 @@ class PowerDataclassDefaultMeta:
         dataclass_order = False
         dataclass_unsafe_hash = False
         dataclass_frozen = False
+        singleton = False
 
 
 class PowerDataclassBase(type):
@@ -134,8 +135,20 @@ class PowerDataclassBase(type):
                           frozen=klass.Meta.dataclass_frozen,
                           )
 
+        for field in dataclasses.fields(klass):
+            if field.metadata.get(FieldMeta.DEPENDS_ON_FIELDS, []) and field.name not in klass.__pdc_field_handlers__:
+                raise MissingFieldHandler(f'A field handler must be registered on {klass.__name__} for '
+                                          f'a field named `{field.name}` because it is declared as calculatable.')
+
         return klass
 
+    def __call__(cls, *args, **kwargs):
+        if cls.Meta.singleton:
+            if getattr(cls, '__singleton_instance__', None) is None:
+                cls.__singleton_instance__ = super().__call__(*args, **kwargs)
+            return cls.__singleton_instance__
+        else:
+            return super().__call__(*args, **kwargs)
 
 
 # wrap a PDC's method with this decorator to register it as a field handler.
@@ -166,12 +179,15 @@ class FieldMeta(Enum):
     DEPENDS_ON_FIELDS = 'depends_on_fields'
 
 
+field = dataclasses.field
+
+
 def nullable_field(*args, **kwargs):
     if 'metadata' in kwargs:
         kwargs['metadata'].update({FieldMeta.NULLABLE: True})
     else:
         kwargs['metadata'] = {FieldMeta.NULLABLE: True}
-    return dataclasses.field(*args, **kwargs)
+    return field(*args, **kwargs)
 
 
 def noncasted_field(*args, **kwargs):
@@ -179,7 +195,7 @@ def noncasted_field(*args, **kwargs):
         kwargs['metadata'].update({FieldMeta.SKIP_TYPECASTING: True})
     else:
         kwargs['metadata'] = {FieldMeta.SKIP_TYPECASTING: True}
-    return dataclasses.field(*args, **kwargs)
+    return field(*args, **kwargs)
 
 
 def calculated_field(depends_on_fields=None, *args, **kwargs):
@@ -190,7 +206,7 @@ def calculated_field(depends_on_fields=None, *args, **kwargs):
         kwargs['metadata'] = {FieldMeta.DEPENDS_ON_FIELDS: depends_on_fields}
     kwargs['default'] = None
 
-    return dataclasses.field(*args, **kwargs)
+    return field(*args, **kwargs)
 
 
 class PowerDataclass(metaclass=PowerDataclassBase):
@@ -206,9 +222,6 @@ class PowerDataclass(metaclass=PowerDataclassBase):
 
             if field.name in self.__pdc_field_handlers__:
                 field_value = self.__pdc_field_handlers__[field.name](self, field_value)
-            elif FieldMeta.DEPENDS_ON_FIELDS in field.metadata:
-                raise MissingFieldHandler(f'A field handler must be registered on {self.__class__.__name__} for '
-                                          f'a field named `{field.name}`')
             elif field.type in self.__pdc_type_handlers__:
                 field_value = self.__pdc_type_handlers__[field.type](self, field_value)
             else:

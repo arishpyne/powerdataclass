@@ -35,6 +35,7 @@ def test_pdc_metaclass_pdc_meta_has_default_attributes():
         'dataclass_order': False,
         'dataclass_unsafe_hash': False,
         'dataclass_frozen': False,
+        'singleton': False,
     }
 
     for attribute_name, attribute_value in required_default_attributes_values.items():
@@ -122,3 +123,17 @@ def test_pdc_metaclass_collapses_meta():
 
     assert PDC2.__pdc_type_handlers__ == {bool: PDC2.handle_type}
     assert PDC2.__pdc_field_handlers__ == {'field': PDC2.handle_field}
+
+
+def test_pdc_metaclass_singleton_mode_on_second_instantiation_returns_singleton_instance():
+    class PDCSingleton(PowerDataclass):
+        a: int
+
+        class Meta:
+            singleton = True
+
+    singleton1 = PDCSingleton(1)
+    singleton2 = PDCSingleton(2)
+
+    assert id(singleton1) == id(singleton1)
+    assert singleton1.a == singleton2.a

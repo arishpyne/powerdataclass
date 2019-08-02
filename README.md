@@ -1,11 +1,6 @@
 # ⚡ Power Dataclass ⚡
 [![Build Status](https://api.travis-ci.org/arishpyne/powerdataclass.svg?branch=master)](https://api.travis-ci.org/arishpyne/powerdataclass.svg?branch=master) [![PyPI version](https://badge.fury.io/py/powerdataclass.svg)](https://pypi.python.org/pypi/powerdataclass/)   [![PyPI pyversions](https://img.shields.io/pypi/pyversions/powerdataclass.svg)](https://pypi.python.org/pypi/powerdataclass/)
 
-
->### DISCLAIMER
-**This library is leveraging the inner mechanics of Python 3.7's `typing` module, and thus only works with Python 3.7**
-**You may experience real shock when it breaks. Wear protective gloves.**
-
 ## Installation
 `pip install powerdataclass`
 
@@ -164,6 +159,50 @@ CubeSquarer(n=4, n_square=16, n_cube=256)
 ```
 
 It is an error to declare a field as `calculatable` without registering a corresponding `field_handler`
+
+## Modification of Power Dataclass behaviour
+You can modify the behaviour of Power Dataclass by editing the `Meta` nested class' attributes.
+All Power Dataclasses have a default value for this `Meta` nested class equal to `powerdataclass.PowerDataclassDefaultMeta`
+This `Meta` subclass will emulate the behaviour of class variable inheritance, making every attribute of `Meta` default to `powerdataclass.PowerDataclassDefaultMeta`
+
+Currently, the following values are now supported:
+
+
+ Name | Default value | Description 
+------|---------------|-------------
+**dataclass_init** | *True* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
+**dataclass_repr** | *True* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
+**dataclass_eq** | *True* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
+**dataclass_order** | *False* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
+**dataclass_unsafe_hash** | *False* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
+**dataclass_frozen** | *False* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
+**singleton** | *False* | If *True* enables the [Singleton Mode](#singleton-mode). 
+
+Example of setting the `Meta` of a `PowerDataclass`:
+```python
+class PowerDataclassWithNewBehaviour(PowerDataclass):
+    class Meta:
+        dataclass_frozen = True
+        singleton = True
+```
+
+## Singleton Mode
+If you set the `Meta.singleton` value to `True`, your PowerDataclass will turn into a [Singleton](https://en.wikipedia.org/wiki/Singleton_pattern). 
+
+This means that this PowerDataclass can be instantiated only once, and all further attempts to instantiate this PDC will return that instance instead:
+```python
+class PDCSingleton(PowerDataclass):
+    a: int
+
+    class Meta:
+        singleton = True
+
+singleton1 = PDCSingleton(1)
+singleton2 = PDCSingleton(2)
+
+>>> id(singleton1) == id(singleton2)
+True
+```
 
 ## Other features
 * Automatic recursive conversion to dict with the `.as_dict()` method.

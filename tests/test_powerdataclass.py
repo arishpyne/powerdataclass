@@ -5,13 +5,6 @@ import pytest
 
 from powerdataclass import PowerDataclass, field_handler, type_handler, noncasted_field, \
     nullable_field, field, FieldMeta, calculated_field, MissingFieldHandler
-import typing
-from unittest import mock
-
-import pytest
-
-from powerdataclass import PowerDataclass, field_handler, type_handler, noncasted_field, \
-    nullable_field, field, FieldMeta, calculated_field, MissingFieldHandler
 
 
 def test_pdc_calls_powercast_for_types_not_handled_by_handlers():
@@ -306,9 +299,7 @@ def test_pdc_calculated_field():
 
 
 def test_pdc_calculated_field_raises_if_no_field_handler_is_registered_on_calculated_field():
-    class PDC(PowerDataclass):
-        n: int
-        n_square: int = calculated_field(depends_on_fields=['n'])
-
     with pytest.raises(MissingFieldHandler):
-        PDC(n=2)
+        class PDC(PowerDataclass):
+            n: int
+            n_square: int = calculated_field(depends_on_fields=['n'])
