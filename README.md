@@ -46,7 +46,7 @@ True
 ```
 
 The typecasting also respects other dataclasses (and Power Dataclasses) declared in type hints.
-If you pass a mapping in place of actual dataclass instance, Power Dataclass will attempt to unpack it to a corresponding dataclass:
+If you pass a mapping or an iterable in place of actual dataclass instance, Power Dataclass will attempt to unpack it to a corresponding dataclass:
 
 ```python
 class Vector(PowerDataclass):
@@ -59,7 +59,7 @@ t1 = Tensor(**{
     'vectors': [
         {'items': [1, 2, 3]},
         {'items': [4, 5, 6]},
-        {'items': [7, 8, 9]},
+        ([7, 8, 9],),
     ]
 })
 
@@ -171,12 +171,16 @@ Currently, the following values are now supported:
  Name | Default value | Description 
 ------|---------------|-------------
 **dataclass_init** | *True* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
-**dataclass_repr** | *True* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
-**dataclass_eq** | *True* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
-**dataclass_order** | *False* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
-**dataclass_unsafe_hash** | *False* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
-**dataclass_frozen** | *False* | passed to the `dataclasses.dataclass` constructor. [See docs](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)|
+**dataclass_repr** | *True* | passed to the `dataclasses.dataclass` constructor. 
+**dataclass_eq** | *True* | passed to the `dataclasses.dataclass` constructor.
+**dataclass_order** | *False* | passed to the `dataclasses.dataclass` constructor. 
+**dataclass_unsafe_hash** | *False* | passed to the `dataclasses.dataclass` constructor.
+**dataclass_frozen** | *False* | passed to the `dataclasses.dataclass` constructor. 
 **singleton** | *False* | If *True* enables the [Singleton Mode](#singleton-mode). 
+**json_encoder** | *None* | If set, this class will be used as a `cls` param to `json.dumps` in `PowerDataclass().to_json()` [See docs](https://docs.python.org/3/library/json.html#json.JSONEncoder). 
+**json_decoder** | *None* | If set, this class will be used as a `cls` param to `json.loads` in `PowerDataclass.from_json()` [See docs](https://docs.python.org/3/library/json.html#json.JSONDecoder). 
+
+
 
 Example of setting the `Meta` of a `PowerDataclass`:
 ```python

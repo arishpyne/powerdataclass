@@ -1,4 +1,5 @@
 import typing
+from json import JSONEncoder, JSONDecoder
 from unittest import mock
 
 import pytest
@@ -303,3 +304,28 @@ def test_pdc_calculated_field_raises_if_no_field_handler_is_registered_on_calcul
         class PDC(PowerDataclass):
             n: int
             n_square: int = calculated_field(depends_on_fields=['n'])
+
+
+def test_pdc_uses_json_decoder_and_encoders_from_meta():
+    class CustomJSONEncoder(JSONEncoder):
+        pass
+
+    class CustomJSONDecoder(JSONDecoder):
+        pass
+
+    class PDC(PowerDataclass):
+        n: int
+
+        class Meta:
+            json_encoder = CustomJSONEncoder
+            json_decoder = CustomJSONDecoder
+
+    with mock.patch('json.dumps', return_value='') as dumps_mock:
+        PDC(1).as_json()
+
+    assert dumps_mock.call_args[1]['cls'] == CustomJSONEncoder
+
+    with mock.patch('json.loads', return_value={'n': 1}) as loads_mock:
+        PDC.from_json('{"n": 1}')
+
+    assert loads_mock.call_args[1]['cls'] == CustomJSONDecoder

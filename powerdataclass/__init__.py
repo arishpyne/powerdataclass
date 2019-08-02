@@ -2,8 +2,7 @@ import dataclasses
 import json
 from enum import Enum
 from functools import partial
-from typing import Mapping, Iterable, Any, Callable, TypeVar, List
-
+from typing import Mapping, Iterable, Any, Callable, TypeVar
 
 from toposort import toposort_flatten
 
@@ -103,6 +102,8 @@ class PowerDataclassDefaultMeta:
         dataclass_unsafe_hash = False
         dataclass_frozen = False
         singleton = False
+        json_encoder = None
+        json_decoder = None
 
 
 class PowerDataclassBase(type):
@@ -267,11 +268,11 @@ class PowerDataclass(metaclass=PowerDataclassBase):
         return asdict_dict
 
     def as_json(self):
-        return json.dumps(self.as_dict())
+        return json.dumps(self.as_dict(), cls=self.Meta.json_encoder)
 
     @classmethod
     def from_json(cls, json_string: str):
-        return cls(**json.loads(json_string))
+        return cls(**json.loads(json_string, cls=cls.Meta.json_decoder))
 
 
 class MissingFieldHandler(Exception):

@@ -1,5 +1,3 @@
-import dataclasses
-
 from powerdataclass import PowerDataclass, field_handler, type_handler
 
 
@@ -36,6 +34,8 @@ def test_pdc_metaclass_pdc_meta_has_default_attributes():
         'dataclass_unsafe_hash': False,
         'dataclass_frozen': False,
         'singleton': False,
+        'json_encoder': None,
+        'json_decoder': None,
     }
 
     for attribute_name, attribute_value in required_default_attributes_values.items():
