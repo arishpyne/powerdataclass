@@ -246,7 +246,17 @@ class PowerDataclass(metaclass=PowerDataclassBase):
     def __pdc_determine_field_handling_order__(self):
         fields = dataclasses.fields(self)
 
-        fields_name_map = {field.name: field for field in dataclasses.fields(self)}
+        fields_name_map = {}
+        dependent_fields_present = False
+
+        for field in fields:
+            if field.metadata.get(FieldMeta.DEPENDS_ON_FIELDS):
+                dependent_fields_present = True
+            fields_name_map.update({field.name: field for field in dataclasses.fields(self)})
+
+        if not dependent_fields_present:
+            # bail out of toposort
+            return fields
 
         fields_handling_dependency_graph = {
             field.name: set(field.metadata.get(FieldMeta.DEPENDS_ON_FIELDS, {})) for field in fields
