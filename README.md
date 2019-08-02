@@ -17,8 +17,9 @@ This library gives you an ability to create dataclasses with field values automa
 the types defined in the `dataclass`'s type hints:
 
 ```python
-@dataclasses.dataclass
-class Coordinates(powerdataclass.PowerDataclass):
+from powerdataclass import *
+
+class Coordinates(PowerDataclass):
     x: int
     y: int
 
@@ -36,8 +37,7 @@ True
 This also works with every generic type that has a Python primitive type as it's origin. This applies to subscriptable types of any level of nestedness as well:
  
 ```python
-@dataclasses.dataclass
-class Vector(powerdataclass.PowerDataclass):
+class Vector(PowerDataclass):
     items: List[int]
 
 v1 = Vector(['1', '2', '3'])
@@ -54,12 +54,10 @@ The typecasting also respects other dataclasses (and Power Dataclasses) declared
 If you pass a mapping in place of actual dataclass instance, Power Dataclass will attempt to unpack it to a corresponding dataclass:
 
 ```python
-@dataclasses.dataclass
-class Vector(powerdataclass.PowerDataclass):
+class Vector(PowerDataclass):
     items: List[int]
    
-@dataclasses.dataclass
-class Tensor(powerdataclass.PowerDataclass):
+class Tensor(PowerDataclass):
     vectors: List[Vector]
 
 t1 = Tensor(**{
@@ -83,20 +81,19 @@ Those functions must _always_ return a value.
 You can do this by marking your methods with special decorators:
 
 ```python
-@dataclasses.dataclass
-class CoolBool(powerdataclass.PowerDataclass):
+class CoolBool(PowerDataclass):
     string_bool: bool
     negated_bool: bool
 
-    @powerdataclass.type_handler(bool)
+    @type_handler(bool)
     def handle_bools(self, v):
         if type(v) is str:
             return v.lower() in ['y', 'yes', '1', 'True']
         else:
             return bool(v)
             
-    @powerdataclass.field_handler('negated_bool')
-    def handle_xored_bools(self, v):
+    @field_handler('negated_bool')
+    def handle_negated_bools(self, v):
         return not self.handle_bools(v)
 
 >>> CoolBool('yes', 'no')
@@ -109,10 +106,9 @@ Field handlers and type handlers are scoped to a particular Power Dataclass. Inh
 If you want to accept `None` as a valid value but also want non-null values to be typecasted you can mark your field as nullable by either setting the corresponding flag in the fields's `metadata` dictionary or using a premade partial:
 
 ```python
-@dataclasses.dataclass
-class Nihilus(powerdataclass.PowerDataclass):
-    x: int = dataclasses.field(metadata={powerdataclass.FieldMeta.NULLABLE: True})
-    y: int = powerdataclass.nullable_field()
+class Nihilus(PowerDataclass):
+    x: int = field(metadata={FieldMeta.NULLABLE: True})
+    y: int = nullable_field()
 
 >>> Nihilus(None, None)
 Nihilus(x=None, y=None) 
@@ -123,10 +119,9 @@ Nihilus(x=1, y=None)
 If you want to disable type checking for a specific field you can mark your field as nullable by either setting the corresponding flag in the fields's `metadata` dictionary or using a premade partial:
 
 ```python
-@dataclasses.dataclass
-class Noncasted(powerdataclass.PowerDataclass):
-    x: int = field(metadata={powerdataclass.FieldMeta.SKIP_TYPECASTING: True})
-    y: int = powerdataclass.noncasted_field()
+class Noncasted(PowerDataclass):
+    x: int = field(metadata={FieldMeta.SKIP_TYPECASTING: True})
+    y: int = noncasted_field()
     
 >>> Noncasted('1', 2.2)
 Noncasted(x='1', y=2.2)
@@ -135,12 +130,11 @@ Noncasted(x='1', y=2.2)
 If some of your field processing requires other fields typecasted before you can declare this field dependencies by name by setting the corresponding value in the fields's `metadata`:
 
 ```python
-@dataclasses.dataclass
-class Dependent(powerdataclass.PowerDataclass):
+class Dependent(PowerDataclass):
     a: int
-    b: int = field(metadata={powerdataclass.FieldMeta.DEPENDS_ON_FIELDS: ['a']})
-    c: int = field(metadata={powerdataclass.FieldMeta.DEPENDS_ON_FIELDS: ['d', 'b']})
-    d: int = field(metadata={powerdataclass.FieldMeta.DEPENDS_ON_FIELDS: ['a']})
+    b: int = field(metadata={FieldMeta.DEPENDS_ON_FIELDS: ['a']})
+    c: int = field(metadata={FieldMeta.DEPENDS_ON_FIELDS: ['d', 'b']})
+    d: int = field(metadata={FieldMeta.DEPENDS_ON_FIELDS: ['a']})
 ```
        
 Fields will be topologically sorted by their dependencies and type casting will be done in this order. For this example, the order will be:
@@ -152,11 +146,10 @@ Fields will be topologically sorted by their dependencies and type casting will 
 You can use a combination of field handlers and dependent fields to declare calculated fields:
 
 ```python  
-@dataclasses.dataclass
 class CubeSquarer(PowerDataclass):
     n: int
     n_square: int = field(default=None, metadata={FieldMeta.DEPENDS_ON_FIELDS: ['n']})
-    n_cube: int = powerdataclass.calculated_field(depends_on=['n'])
+    n_cube: int = calculated_field(depends_on=['n'])
 
     @field_handler('n_square')
     def handle_n_square(self, v):

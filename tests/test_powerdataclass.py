@@ -1,4 +1,10 @@
-import dataclasses
+import typing
+from unittest import mock
+
+import pytest
+
+from powerdataclass import PowerDataclass, field_handler, type_handler, noncasted_field, \
+    nullable_field, field, FieldMeta, calculated_field, MissingFieldHandler
 import typing
 from unittest import mock
 
@@ -9,7 +15,6 @@ from powerdataclass import PowerDataclass, field_handler, type_handler, noncaste
 
 
 def test_pdc_calls_powercast_for_types_not_handled_by_handlers():
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         x: int
         y: str
@@ -27,7 +32,6 @@ def test_pdc_calls_type_handlers_for_registered_types():
     int_handler_mock = mock.MagicMock()
     str_handler_mock = mock.MagicMock()
 
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         x: int
         y: str
@@ -49,7 +53,6 @@ def test_pdc_calls_type_handlers_for_registered_types():
 
 
 def test_pdc_type_handlers_are_applied_for_nested_values_as_well():
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         x: int
         y: typing.List[int]
@@ -67,7 +70,6 @@ def test_pdc_calls_field_handlers_for_registered_fields():
     field_x_handler_mock = mock.MagicMock()
     field_y_handler_mock = mock.MagicMock()
 
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         x: int
         y: str
@@ -95,7 +97,6 @@ def test_pdc_field_handlers_take_precedence_over_type_handlers():
     int_handler_mock = mock.MagicMock()
     str_handler_mock = mock.MagicMock()
 
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         x: int
         y: str
@@ -133,7 +134,6 @@ def test_pdc_field_casting_completely_ignored_for_marked_fields():
     int_handler_mock = mock.MagicMock()
     str_handler_mock = mock.MagicMock()
 
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         x: int = noncasted_field()
         y: str = noncasted_field()
@@ -163,7 +163,6 @@ def test_pdc_field_casting_completely_ignored_for_marked_fields():
 
 
 def test_pdc_nullable_fields():
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         x: int = nullable_field()
 
@@ -171,7 +170,6 @@ def test_pdc_nullable_fields():
 
 
 def test_pdc_nullable_fields_raises_on_none_in_regular_fields():
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         x: int
 
@@ -186,10 +184,9 @@ def test_pdc_dependent_fields_field_handlers_execution_order():
         def test_field_handler(self, v):
             recorded_handlers_execution_order.append(name)
             return v
+
         return test_field_handler
 
-
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         a: int = field(metadata={FieldMeta.DEPENDS_ON_FIELDS: ['b', 'd', 'f']})
         b: int = field(metadata={FieldMeta.DEPENDS_ON_FIELDS: ['c']})
@@ -227,7 +224,6 @@ def test_pdc_dependent_fields_field_handlers_execution_order():
 
 
 def test_pdc_recreatable_from_dict_form():
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         x: int
         y: str
@@ -244,7 +240,6 @@ def test_pdc_recreatable_from_dict_form():
 
 
 def test_pdc_recreatable_from_json_form():
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         x: int
         y: str
@@ -257,18 +252,15 @@ def test_pdc_recreatable_from_json_form():
 
 
 def test_pdc_with_nested_pdcs_recreatable_from_dict_form():
-    @dataclasses.dataclass
     class PDCNestedNested(PowerDataclass):
         n: str
         t: bool
 
-    @dataclasses.dataclass
     class PDCNested(PowerDataclass):
         a: int
         b: str
         nested_nested: typing.List[PDCNestedNested]
 
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         x: int
         y: str
@@ -294,7 +286,6 @@ def test_pdc_with_nested_pdcs_recreatable_from_dict_form():
 
 
 def test_pdc_calculated_field():
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         n: int
         n_square: int = field(default=None, metadata={FieldMeta.DEPENDS_ON_FIELDS: ['n']})
@@ -315,7 +306,6 @@ def test_pdc_calculated_field():
 
 
 def test_pdc_calculated_field_raises_if_no_field_handler_is_registered_on_calculated_field():
-    @dataclasses.dataclass
     class PDC(PowerDataclass):
         n: int
         n_square: int = calculated_field(depends_on_fields=['n'])

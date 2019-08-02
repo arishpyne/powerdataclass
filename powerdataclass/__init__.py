@@ -1,9 +1,9 @@
 import dataclasses
-from dataclasses import field
 import json
 from enum import Enum
 from functools import partial
 from typing import Mapping, Iterable, Any, Callable, TypeVar, List
+from dataclasses import field
 
 from toposort import toposort_flatten
 
@@ -92,6 +92,15 @@ def collapse_classes(klasses, klass_name, klass_type=None):
     return type(klass_name, (klass_type or last_klass,), klass__dict__)
 
 
+class PowerDataclassDefaultMeta:
+        dataclass_init = True
+        dataclass_repr = True
+        dataclass_eq = True
+        dataclass_order = False
+        dataclass_unsafe_hash = False
+        dataclass_frozen = False
+
+
 class PowerDataclassBase(type):
     def __new__(mcs, name, bases, spec):
         klass_type_handlers = {}
@@ -109,12 +118,24 @@ class PowerDataclassBase(type):
 
         klass = super().__new__(mcs, name, bases, spec)
 
-        klass.Meta = collapse_classes(
-            (klass.Meta for klass in (*bases, klass) if hasattr(klass, 'Meta')), f'Meta', object)
+        klass.Meta = collapse_classes((PowerDataclassDefaultMeta,
+                                       *(klass.Meta for klass in (*bases, klass) if hasattr(klass, 'Meta'))),
+                                      f'Meta', object)
         klass.__pdc_type_handlers__ = klass_type_handlers
         klass.__pdc_field_handlers__ = klass_field_handlers
 
+        # convert to a dataclass, respecting the `dataclass_` Meta params
+        klass = dataclasses.dataclass(klass,
+                          init=klass.Meta.dataclass_init,
+                          repr=klass.Meta.dataclass_repr,
+                          eq=klass.Meta.dataclass_eq,
+                          order=klass.Meta.dataclass_order,
+                          unsafe_hash=klass.Meta.dataclass_unsafe_hash,
+                          frozen=klass.Meta.dataclass_frozen,
+                          )
+
         return klass
+
 
 
 # wrap a PDC's method with this decorator to register it as a field handler.
@@ -150,7 +171,7 @@ def nullable_field(*args, **kwargs):
         kwargs['metadata'].update({FieldMeta.NULLABLE: True})
     else:
         kwargs['metadata'] = {FieldMeta.NULLABLE: True}
-    return field(*args, **kwargs)
+    return dataclasses.field(*args, **kwargs)
 
 
 def noncasted_field(*args, **kwargs):
@@ -158,7 +179,7 @@ def noncasted_field(*args, **kwargs):
         kwargs['metadata'].update({FieldMeta.SKIP_TYPECASTING: True})
     else:
         kwargs['metadata'] = {FieldMeta.SKIP_TYPECASTING: True}
-    return field(*args, **kwargs)
+    return dataclasses.field(*args, **kwargs)
 
 
 def calculated_field(depends_on_fields=None, *args, **kwargs):
@@ -167,13 +188,11 @@ def calculated_field(depends_on_fields=None, *args, **kwargs):
         kwargs['metadata'].update({FieldMeta.DEPENDS_ON_FIELDS: depends_on_fields})
     else:
         kwargs['metadata'] = {FieldMeta.DEPENDS_ON_FIELDS: depends_on_fields}
-
     kwargs['default'] = None
 
-    return field(*args, **kwargs)
+    return dataclasses.field(*args, **kwargs)
 
 
-@dataclasses.dataclass
 class PowerDataclass(metaclass=PowerDataclassBase):
     def __post_init__(self):
         self.__pdc_handle_fields__()
