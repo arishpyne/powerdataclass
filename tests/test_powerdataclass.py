@@ -8,71 +8,6 @@ from powerdataclass import PowerDataclass, register_pdc_field_handler, register_
     nullable_field, field, FieldMeta, calculated_field, MissingFieldHandler
 
 
-def test_pdc_register_handlers():
-    @dataclasses.dataclass
-    class PDC(PowerDataclass):
-        @register_pdc_field_handler('field')
-        def handle_field(self, v):
-            return v
-
-        @register_pdc_type_handler(bool)
-        def handle_type(self, v):
-            return v
-
-    assert PDC.__pdc_type_handlers__ == {bool: PDC.handle_type}
-    assert PDC.__pdc_field_handlers__ == {'field': PDC.handle_field}
-
-
-def test_pdc_register_handlers_respects_inheritance():
-    @dataclasses.dataclass
-    class PDC(PowerDataclass):
-        @register_pdc_field_handler('field')
-        def handle_field(self, v):
-            return v
-
-        @register_pdc_type_handler(bool)
-        def handle_type(self, v):
-            return v
-
-    @dataclasses.dataclass
-    class PDC2(PDC):
-        @register_pdc_field_handler('field2')
-        def handle_field2(self, v):
-            return v
-
-        @register_pdc_type_handler(list)
-        def handle_type2(self, v):
-            return v
-
-    assert PDC2.__pdc_type_handlers__ == {bool: PDC.handle_type, list: PDC2.handle_type2}
-    assert PDC2.__pdc_field_handlers__ == {'field': PDC.handle_field, 'field2': PDC2.handle_field2}
-
-
-def test_pdc_register_handlers_overwrite_parent_handlers_if_matching_type_or_field():
-    @dataclasses.dataclass
-    class PDC(PowerDataclass):
-        @register_pdc_field_handler('field')
-        def handle_field(self, v):
-            return v
-
-        @register_pdc_type_handler(bool)
-        def handle_type(self, v):
-            return v
-
-    @dataclasses.dataclass
-    class PDC2(PDC):
-        @register_pdc_field_handler('field')
-        def handle_field(self, v):
-            return v
-
-        @register_pdc_type_handler(bool)
-        def handle_type(self, v):
-            return v
-
-    assert PDC2.__pdc_type_handlers__ == {bool: PDC2.handle_type}
-    assert PDC2.__pdc_field_handlers__ == {'field': PDC2.handle_field}
-
-
 def test_pdc_calls_powercast_for_types_not_handled_by_handlers():
     @dataclasses.dataclass
     class PDC(PowerDataclass):
@@ -126,7 +61,6 @@ def test_pdc_type_handlers_are_applied_for_nested_values_as_well():
     pdc = PDC('2', ['3', '4', '5'])
     assert pdc.x == 4
     assert pdc.y == [9, 16, 25]
-
 
 
 def test_pdc_calls_field_handlers_for_registered_fields():

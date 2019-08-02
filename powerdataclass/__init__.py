@@ -8,48 +8,6 @@ from typing import Mapping, Iterable, Any, Callable, TypeVar, List
 from toposort import toposort_flatten
 
 
-class PowerDataclassBase(type):
-    def __new__(mcs, name, bases, spec):
-        klass_type_handlers = {}
-        klass_field_handlers = {}
-
-        for base_klass in bases:
-            klass_field_handlers.update(getattr(base_klass, '__pdc_field_handlers__', {}))
-            klass_type_handlers.update(getattr(base_klass, '__pdc_type_handlers__', {}))
-
-        for method_name, method in spec.items():
-            if hasattr(method, '__pdc_field_handler_field__'):
-                klass_field_handlers.update({method.__pdc_field_handler_field__: method})
-            if hasattr(method, '__pdc_type_handler_type__'):
-                klass_type_handlers.update({method.__pdc_type_handler_type__: method})
-
-        klass = super().__new__(mcs, name, bases, spec)
-
-        klass.__pdc_type_handlers__ = klass_type_handlers
-        klass.__pdc_field_handlers__ = klass_field_handlers
-
-        return klass
-
-
-def setfuncattr(name: str, value: Any):
-    def _inner(method):
-        setattr(method, name, value)
-        return method
-
-    return _inner
-
-
-# wrap a PDC's method with this decorator to register it as a field handler.
-# field handlers must return a value and will be used to cast values to the type they're registered on.
-# field handlers can also be used a tool to calculate values of a field based on the values of other fields.
-# See `FieldMeta.DEPENDS_ON_FIELDS` to achieve this behaviour.
-register_pdc_field_handler = partial(setfuncattr, '__pdc_field_handler_field__')
-
-# wrap a PDC's method with this decorator to register it as a type handler.
-# type handlers must return a value and will be used to cast values to the type they're registered on.
-register_pdc_type_handler = partial(setfuncattr, '__pdc_type_handler_type__')
-
-
 def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = None) -> Any:
     """
     Casts a `value` to a given `_type`. Descends recursively to cast generic subscripted types.
@@ -114,6 +72,62 @@ def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = Non
         return _type(value)
 
 
+# FunkyTools:
+
+def setfuncattr(name: str, value: Any):
+    def _inner(method):
+        setattr(method, name, value)
+        return method
+
+    return _inner
+
+
+def collapse_classes(klasses, klass_name, klass_type=None):
+    klass__dict__, last_klass = {}, None
+
+    for kls in klasses:
+        klass__dict__.update(getattr(kls, '__dict__', {}))
+        last_klass = kls
+
+    return type(klass_name, (klass_type or last_klass,), klass__dict__)
+
+
+class PowerDataclassBase(type):
+    def __new__(mcs, name, bases, spec):
+        klass_type_handlers = {}
+        klass_field_handlers = {}
+
+        for base_klass in bases:
+            klass_field_handlers.update(getattr(base_klass, '__pdc_field_handlers__', {}))
+            klass_type_handlers.update(getattr(base_klass, '__pdc_type_handlers__', {}))
+
+        for method_name, method in spec.items():
+            if hasattr(method, '__pdc_field_handler_field__'):
+                klass_field_handlers.update({method.__pdc_field_handler_field__: method})
+            if hasattr(method, '__pdc_type_handler_type__'):
+                klass_type_handlers.update({method.__pdc_type_handler_type__: method})
+
+        klass = super().__new__(mcs, name, bases, spec)
+
+        klass.Meta = collapse_classes(
+            (klass.Meta for klass in (*bases, klass) if hasattr(klass, 'Meta')), f'Meta', object)
+        klass.__pdc_type_handlers__ = klass_type_handlers
+        klass.__pdc_field_handlers__ = klass_field_handlers
+
+        return klass
+
+
+# wrap a PDC's method with this decorator to register it as a field handler.
+# field handlers must return a value and will be used to cast values to the type they're registered on.
+# field handlers can also be used a tool to calculate values of a field based on the values of other fields.
+# See `FieldMeta.DEPENDS_ON_FIELDS` to achieve this behaviour.
+register_pdc_field_handler = partial(setfuncattr, '__pdc_field_handler_field__')
+
+# wrap a PDC's method with this decorator to register it as a type handler.
+# type handlers must return a value and will be used to cast values to the type they're registered on.
+register_pdc_type_handler = partial(setfuncattr, '__pdc_type_handler_type__')
+
+
 class FieldMeta(Enum):
     """
     Use this in PowerDataclass field's `metadata` to change the behaviour of a field.
@@ -157,11 +171,6 @@ def calculated_field(depends_on_fields=None, *args, **kwargs):
     kwargs['default'] = None
 
     return field(*args, **kwargs)
-
-
-class MissingFieldHandler(Exception):
-    """Raised when no registered field handler for calculated field can be found"""
-    pass
 
 
 @dataclasses.dataclass
@@ -228,3 +237,8 @@ class PowerDataclass(metaclass=PowerDataclassBase):
     @classmethod
     def from_json(cls, json_string: str):
         return cls(**json.loads(json_string))
+
+
+class MissingFieldHandler(Exception):
+    """Raised when no registered field handler for calculated field can be found"""
+    pass
