@@ -35,12 +35,15 @@ def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = Non
         return type_casters[_type](value)
 
     if dataclasses.is_dataclass(_type):
-        if not issubclass(value_type, Mapping):
+        if issubclass(value_type, Mapping):
+            return _type(**value)
+        elif issubclass(value_type, Iterable):
+            return _type(*value)
+        else:
             raise ValueError(f'The type of this value is defined as'
                              f' dataclass {_type.__name__}. To be able to cast the value of '
-                             f'this field to a dataclass instance, '
-                             f'it must be a mapping, while it is {value_type.__name__} now')
-        return _type(**value)
+                             f'this field to a dataclass instance through args or kwargs unpacking, '
+                             f'it must be an iterable or a mapping respictively, while it is {value_type.__name__} now')
 
     if field_type_origin in (list, dict, tuple, set, frozenset):
         if field_type_origin in (list, tuple, set, frozenset):
