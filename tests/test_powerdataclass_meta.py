@@ -1,6 +1,6 @@
 import dataclasses
 
-from powerdataclass import PowerDataclass, register_pdc_field_handler, register_pdc_type_handler
+from powerdataclass import PowerDataclass, field_handler, type_handler
 
 
 def test_pdc_metaclass_pdc_meta_collapses_pdc_meta():
@@ -31,11 +31,11 @@ def test_pdc_metaclass_pdc_meta_collapses_pdc_meta():
 def test_pdc_metaclass_registers_handlers():
     @dataclasses.dataclass
     class PDC(PowerDataclass):
-        @register_pdc_field_handler('field')
+        @field_handler('field')
         def handle_field(self, v):
             return v
 
-        @register_pdc_type_handler(bool)
+        @type_handler(bool)
         def handle_type(self, v):
             return v
 
@@ -46,21 +46,21 @@ def test_pdc_metaclass_registers_handlers():
 def test_pdc_metaclass_registers_handlers_respects_inheritance():
     @dataclasses.dataclass
     class PDC(PowerDataclass):
-        @register_pdc_field_handler('field')
+        @field_handler('field')
         def handle_field(self, v):
             return v
 
-        @register_pdc_type_handler(bool)
+        @type_handler(bool)
         def handle_type(self, v):
             return v
 
     @dataclasses.dataclass
     class PDC2(PDC):
-        @register_pdc_field_handler('field2')
+        @field_handler('field2')
         def handle_field2(self, v):
             return v
 
-        @register_pdc_type_handler(list)
+        @type_handler(list)
         def handle_type2(self, v):
             return v
 
@@ -71,21 +71,21 @@ def test_pdc_metaclass_registers_handlers_respects_inheritance():
 def test_pdc_metaclass_registers_handlers_overwrites_parent_handlers_if_matching_type_or_field():
     @dataclasses.dataclass
     class PDC(PowerDataclass):
-        @register_pdc_field_handler('field')
+        @field_handler('field')
         def handle_field(self, v):
             return v
 
-        @register_pdc_type_handler(bool)
+        @type_handler(bool)
         def handle_type(self, v):
             return v
 
     @dataclasses.dataclass
     class PDC2(PDC):
-        @register_pdc_field_handler('field')
+        @field_handler('field')
         def handle_field(self, v):
             return v
 
-        @register_pdc_type_handler(bool)
+        @type_handler(bool)
         def handle_type(self, v):
             return v
 
@@ -96,21 +96,21 @@ def test_pdc_metaclass_registers_handlers_overwrites_parent_handlers_if_matching
 def test_pdc_metaclass_collapses_meta():
     @dataclasses.dataclass
     class PDC(PowerDataclass):
-        @register_pdc_field_handler('field')
+        @field_handler('field')
         def handle_field(self, v):
             return v
 
-        @register_pdc_type_handler(bool)
+        @type_handler(bool)
         def handle_type(self, v):
             return v
 
     @dataclasses.dataclass
     class PDC2(PDC):
-        @register_pdc_field_handler('field')
+        @field_handler('field')
         def handle_field(self, v):
             return v
 
-        @register_pdc_type_handler(bool)
+        @type_handler(bool)
         def handle_type(self, v):
             return v
 

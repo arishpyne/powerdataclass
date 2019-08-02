@@ -88,14 +88,14 @@ class CoolBool(powerdataclass.PowerDataclass):
     string_bool: bool
     negated_bool: bool
 
-    @powerdataclass.register_pdc_type_handler(bool)
+    @powerdataclass.type_handler(bool)
     def handle_bools(self, v):
         if type(v) is str:
             return v.lower() in ['y', 'yes', '1', 'True']
         else:
             return bool(v)
             
-    @powerdataclass.register_pdc_field_handler('negated_bool')
+    @powerdataclass.field_handler('negated_bool')
     def handle_xored_bools(self, v):
         return not self.handle_bools(v)
 
@@ -158,11 +158,11 @@ class CubeSquarer(PowerDataclass):
     n_square: int = field(default=None, metadata={FieldMeta.DEPENDS_ON_FIELDS: ['n']})
     n_cube: int = powerdataclass.calculated_field(depends_on=['n'])
 
-    @register_pdc_field_handler('n_square')
+    @field_handler('n_square')
     def handle_n_square(self, v):
         return self.n ** 2
     
-    @register_pdc_field_handler('n_cube')
+    @field_handler('n_cube')
     def handle_n_cube(self, v):
         return self.n ** 3
  

@@ -4,7 +4,7 @@ from unittest import mock
 
 import pytest
 
-from powerdataclass import PowerDataclass, register_pdc_field_handler, register_pdc_type_handler, noncasted_field, \
+from powerdataclass import PowerDataclass, field_handler, type_handler, noncasted_field, \
     nullable_field, field, FieldMeta, calculated_field, MissingFieldHandler
 
 
@@ -32,11 +32,11 @@ def test_pdc_calls_type_handlers_for_registered_types():
         x: int
         y: str
 
-        @register_pdc_type_handler(int)
+        @type_handler(int)
         def int_handler(self, v):
             return int_handler_mock(self, v)
 
-        @register_pdc_type_handler(str)
+        @type_handler(str)
         def str_handler(self, v):
             return str_handler_mock(self, v)
 
@@ -54,7 +54,7 @@ def test_pdc_type_handlers_are_applied_for_nested_values_as_well():
         x: int
         y: typing.List[int]
 
-        @register_pdc_type_handler(int)
+        @type_handler(int)
         def int_handler(self, v):
             return int(v) ** 2
 
@@ -72,11 +72,11 @@ def test_pdc_calls_field_handlers_for_registered_fields():
         x: int
         y: str
 
-        @register_pdc_field_handler('x')
+        @field_handler('x')
         def field_x_handler(self, v):
             return field_x_handler_mock(self, v)
 
-        @register_pdc_field_handler('y')
+        @field_handler('y')
         def field_y_handler(self, v):
             return field_y_handler_mock(self, v)
 
@@ -100,19 +100,19 @@ def test_pdc_field_handlers_take_precedence_over_type_handlers():
         x: int
         y: str
 
-        @register_pdc_field_handler('x')
+        @field_handler('x')
         def field_x_handler(self, v):
             return field_x_handler_mock(self, v)
 
-        @register_pdc_field_handler('y')
+        @field_handler('y')
         def field_y_handler(self, v):
             return field_y_handler_mock(self, v)
 
-        @register_pdc_type_handler(int)
+        @type_handler(int)
         def int_handler(self, v):
             return int_handler_mock(self, v)
 
-        @register_pdc_type_handler(str)
+        @type_handler(str)
         def str_handler(self, v):
             return str_handler_mock(self, v)
 
@@ -138,19 +138,19 @@ def test_pdc_field_casting_completely_ignored_for_marked_fields():
         x: int = noncasted_field()
         y: str = noncasted_field()
 
-        @register_pdc_field_handler('x')
+        @field_handler('x')
         def field_x_handler(self, v):
             return field_x_handler_mock(self, v)
 
-        @register_pdc_field_handler('y')
+        @field_handler('y')
         def field_y_handler(self, v):
             return field_y_handler_mock(self, v)
 
-        @register_pdc_type_handler(int)
+        @type_handler(int)
         def int_handler(self, v):
             return int_handler_mock(self, v)
 
-        @register_pdc_type_handler(str)
+        @type_handler(str)
         def str_handler(self, v):
             return str_handler_mock(self, v)
 
@@ -198,27 +198,27 @@ def test_pdc_dependent_fields_field_handlers_execution_order():
         e: int = field(metadata={FieldMeta.DEPENDS_ON_FIELDS: ['d']})
         f: int = field(metadata={FieldMeta.DEPENDS_ON_FIELDS: ['b', 'c', 'e']})
 
-        @register_pdc_field_handler('a')
+        @field_handler('a')
         def field_a_handler(self, v):
             return get_test_field_handler('a')(self, v)
 
-        @register_pdc_field_handler('b')
+        @field_handler('b')
         def field_b_handler(self, v):
             return get_test_field_handler('b')(self, v)
 
-        @register_pdc_field_handler('c')
+        @field_handler('c')
         def field_c_handler(self, v):
             return get_test_field_handler('c')(self, v)
 
-        @register_pdc_field_handler('d')
+        @field_handler('d')
         def field_d_handler(self, v):
             return get_test_field_handler('d')(self, v)
 
-        @register_pdc_field_handler('e')
+        @field_handler('e')
         def field_e_handler(self, v):
             return get_test_field_handler('e')(self, v)
 
-        @register_pdc_field_handler('f')
+        @field_handler('f')
         def field_f_handler(self, v):
             return get_test_field_handler('f')(self, v)
 
@@ -300,11 +300,11 @@ def test_pdc_calculated_field():
         n_square: int = field(default=None, metadata={FieldMeta.DEPENDS_ON_FIELDS: ['n']})
         n_cube: int = calculated_field(depends_on_fields=['n'])
 
-        @register_pdc_field_handler('n_square')
+        @field_handler('n_square')
         def handle_n_square(self, v):
             return self.n ** 2
 
-        @register_pdc_field_handler('n_cube')
+        @field_handler('n_cube')
         def handle_n_cube(self, v):
             return self.n ** 3
 

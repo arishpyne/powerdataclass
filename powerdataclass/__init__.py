@@ -121,11 +121,11 @@ class PowerDataclassBase(type):
 # field handlers must return a value and will be used to cast values to the type they're registered on.
 # field handlers can also be used a tool to calculate values of a field based on the values of other fields.
 # See `FieldMeta.DEPENDS_ON_FIELDS` to achieve this behaviour.
-register_pdc_field_handler = partial(setfuncattr, '__pdc_field_handler_field__')
+field_handler = partial(setfuncattr, '__pdc_field_handler_field__')
 
 # wrap a PDC's method with this decorator to register it as a type handler.
 # type handlers must return a value and will be used to cast values to the type they're registered on.
-register_pdc_type_handler = partial(setfuncattr, '__pdc_type_handler_type__')
+type_handler = partial(setfuncattr, '__pdc_type_handler_type__')
 
 
 class FieldMeta(Enum):
