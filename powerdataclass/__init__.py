@@ -95,15 +95,15 @@ def collapse_classes(klasses, klass_name, klass_type=None):
 
 
 class PowerDataclassDefaultMeta:
-        dataclass_init = True
-        dataclass_repr = True
-        dataclass_eq = True
-        dataclass_order = False
-        dataclass_unsafe_hash = False
-        dataclass_frozen = False
-        singleton = False
-        json_encoder = None
-        json_decoder = None
+    dataclass_init = True
+    dataclass_repr = True
+    dataclass_eq = True
+    dataclass_order = False
+    dataclass_unsafe_hash = False
+    dataclass_frozen = False
+    singleton = False
+    json_encoder = None
+    json_decoder = None
 
 
 class PowerDataclassBase(type):
@@ -131,18 +131,43 @@ class PowerDataclassBase(type):
 
         # convert to a dataclass, respecting the `dataclass_` Meta params
         klass = dataclasses.dataclass(klass,
-                          init=klass.Meta.dataclass_init,
-                          repr=klass.Meta.dataclass_repr,
-                          eq=klass.Meta.dataclass_eq,
-                          order=klass.Meta.dataclass_order,
-                          unsafe_hash=klass.Meta.dataclass_unsafe_hash,
-                          frozen=klass.Meta.dataclass_frozen,
-                          )
+                                      init=klass.Meta.dataclass_init,
+                                      repr=klass.Meta.dataclass_repr,
+                                      eq=klass.Meta.dataclass_eq,
+                                      order=klass.Meta.dataclass_order,
+                                      unsafe_hash=klass.Meta.dataclass_unsafe_hash,
+                                      frozen=klass.Meta.dataclass_frozen,
+                                      )
 
         for field in dataclasses.fields(klass):
             if field.metadata.get(FieldMeta.DEPENDS_ON_FIELDS, []) and field.name not in klass.__pdc_field_handlers__:
                 raise MissingFieldHandler(f'A field handler must be registered on {klass.__name__} for '
                                           f'a field named `{field.name}` because it is declared as calculatable.')
+
+        def __pdc_determine_field_handling_order__(cls):
+            fields = dataclasses.fields(cls)
+
+            fields_name_map = {}
+            dependent_fields_present = False
+
+            for field in fields:
+                if field.metadata.get(FieldMeta.DEPENDS_ON_FIELDS):
+                    dependent_fields_present = True
+                fields_name_map.update({field.name: field for field in dataclasses.fields(cls)})
+
+            if not dependent_fields_present:
+                # bail out of toposort
+                return fields
+
+            fields_handling_dependency_graph = {
+                field.name: set(field.metadata.get(FieldMeta.DEPENDS_ON_FIELDS, {})) for field in fields
+            }
+
+            fields_handling_execution_order = toposort_flatten(fields_handling_dependency_graph)
+
+            return (fields_name_map[field_name] for field_name in fields_handling_execution_order)
+
+        klass.__pdc_field_handling_order__ = __pdc_determine_field_handling_order__(klass)
 
         return klass
 
@@ -218,7 +243,7 @@ class PowerDataclass(metaclass=PowerDataclassBase):
         self.__pdc_handle_fields__()
 
     def __pdc_handle_fields__(self):
-        for field in self.__pdc_determine_field_handling_order__():
+        for field in self.__pdc_field_handling_order__:
             field_value = getattr(self, field.name)
 
             if field.metadata.get(FieldMeta.SKIP_TYPECASTING, False):
