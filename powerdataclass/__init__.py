@@ -178,7 +178,14 @@ class PowerDataclassBase(type):
                     cls.__singleton_instance__.__init__(*args, **kwargs)
                 return cls.__singleton_instance__
 
+            def get_instance(cls):
+                if cls.__singleton_instance__:
+                    return cls.__singleton_instance__
+                else:
+                    raise RuntimeError(f'{klass.__name__} was not instantiated yet!')
+
             klass.__new__ = __singleton__new__
+            klass.get_instance = get_instance
 
         return klass
 
