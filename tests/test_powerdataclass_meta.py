@@ -137,3 +137,24 @@ def test_pdc_metaclass_singleton_mode_on_second_instantiation_returns_singleton_
 
     assert id(singleton1) == id(singleton1)
     assert singleton1.a == singleton2.a
+
+
+def test_pdc_metaclass_declaring_one_dataclass_singleton_does_not_make_other_dataclasses_singleton():
+    class PDC(PowerDataclass):
+        a: int
+
+    class PDCSingleton(PDC):
+        class Meta:
+            singleton = True
+
+    pdc1 = PDC(1)
+    pdc2 = PDC(2)
+
+    assert id(pdc1) != id(pdc2)
+    assert pdc1.a != pdc2.a
+
+    singleton1 = PDCSingleton(1)
+    singleton2 = PDCSingleton(2)
+
+    assert id(singleton1) == id(singleton1)
+    assert singleton1.a == singleton2.a

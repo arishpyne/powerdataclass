@@ -169,15 +169,18 @@ class PowerDataclassBase(type):
 
         klass.__pdc_field_handling_order__ = __pdc_determine_field_handling_order__(klass)
 
-        return klass
+        if klass.Meta.singleton:
+            klass.__singleton_instance__ = None
 
-    def __call__(cls, *args, **kwargs):
-        if cls.Meta.singleton:
-            if getattr(cls, '__singleton_instance__', None) is None:
-                cls.__singleton_instance__ = super().__call__(*args, **kwargs)
-            return cls.__singleton_instance__
-        else:
-            return super().__call__(*args, **kwargs)
+            def __singleton__new__(cls, *args, **kwargs):
+                if cls.__singleton_instance__ is None:
+                    cls.__singleton_instance__ = super(cls, klass).__new__(cls)
+                    cls.__singleton_instance__.__init__(*args, **kwargs)
+                return cls.__singleton_instance__
+
+            klass.__new__ = __singleton__new__
+
+        return klass
 
 
 # wrap a PDC's method with this decorator to register it as a field handler.
