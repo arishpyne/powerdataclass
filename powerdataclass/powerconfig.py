@@ -1,8 +1,10 @@
-from enum import Enum
-
-from powerdataclass import PowerDataclass, FieldMeta, field, type_handler
+import dataclasses
 from dataclasses import fields
+from enum import Enum
 from os import environ
+
+from powerdataclass import PowerDataclass, field, type_handler, calculated_field as pdc_calculated_field
+
 
 class PowerConfigFieldMeta(Enum):
     IGNORE_ENVIRON = 'IGNORE_ENVIRON'
@@ -17,11 +19,7 @@ def ignore_environ_field(*args, **kwargs):
 
 
 def calculated_field(*args, **kwargs):
-    if 'metadata' in kwargs:
-        kwargs['metadata'].update({PowerConfigFieldMeta.IGNORE_ENVIRON: True})
-    else:
-        kwargs['metadata'] = {PowerConfigFieldMeta.IGNORE_ENVIRON: True}
-    return ignore_environ_field(*args, **kwargs)
+    return pdc_calculated_field(ignore_environ_field(*args, **kwargs))
 
 
 class PowerConfig(PowerDataclass):
@@ -30,7 +28,6 @@ class PowerConfig(PowerDataclass):
 
     @classmethod
     def from_environ(cls):
-        print(cls)
         envdict = {field.name:
                        environ.get(f'{cls.Meta.envvar_prefix.upper()}_{field.name.upper()}')
                    for field in fields(cls) if
