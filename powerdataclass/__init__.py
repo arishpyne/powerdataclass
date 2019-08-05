@@ -174,7 +174,7 @@ class PowerDataclassBase(type):
 
             def __singleton__new__(cls, *args, **kwargs):
                 if cls.__singleton_instance__ is None:
-                    cls.__singleton_instance__ = super(cls, klass).__new__(cls)
+                    cls.__singleton_instance__ = super(klass, cls).__new__(cls)
                     cls.__singleton_instance__.__init__(*args, **kwargs)
                 return cls.__singleton_instance__
 
@@ -185,7 +185,7 @@ class PowerDataclassBase(type):
                     raise RuntimeError(f'{klass.__name__} was not instantiated yet!')
 
             klass.__new__ = __singleton__new__
-            klass.get_instance = get_instance
+            klass.get_instance = classmethod(get_instance)
 
         return klass
 
@@ -265,7 +265,7 @@ class PowerDataclass(metaclass=PowerDataclassBase):
                 field_value = self.__pdc_type_handlers__[field.type](self, field_value)
             else:
                 if field_value is None:
-                    if field.metadata.get(FieldMeta.NULLABLE, False):
+                    if field.metadata.get(FieldMeta.NULLABLE, False) or field.default is None:
                         continue
                     else:
                         raise ValueError(f'A value for {self.__class__.__name__} field `{field.name}` cannot be None')
