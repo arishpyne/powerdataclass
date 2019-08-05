@@ -1,5 +1,6 @@
 import dataclasses
 import json
+from copy import copy
 from enum import Enum
 from functools import partial
 from typing import Mapping, Iterable, Any, Callable, TypeVar
@@ -174,8 +175,7 @@ class PowerDataclassBase(type):
 
             def __singleton__new__(cls, *args, **kwargs):
                 if cls.__singleton_instance__ is None:
-                    cls.__singleton_instance__ = super(klass, cls).__new__(cls)
-                    cls.__singleton_instance__.__init__(*args, **kwargs)
+                    cls.__singleton_instance__ = object.__new__(cls)
                 return cls.__singleton_instance__
 
             def get_instance(cls):
@@ -184,7 +184,7 @@ class PowerDataclassBase(type):
                 else:
                     raise RuntimeError(f'{klass.__name__} was not instantiated yet!')
 
-            klass.__new__ = __singleton__new__
+            klass.__new__ = staticmethod(__singleton__new__)
             klass.get_instance = classmethod(get_instance)
 
         return klass
@@ -265,7 +265,8 @@ class PowerDataclass(metaclass=PowerDataclassBase):
                 field_value = self.__pdc_type_handlers__[field.type](self, field_value)
             else:
                 if field_value is None:
-                    if field.metadata.get(FieldMeta.NULLABLE, False) or field.default is None:
+                    if field.metadata.get(FieldMeta.NULLABLE, False) or \
+                            field.default is not None or field.default_factory is not None:
                         continue
                     else:
                         raise ValueError(f'A value for {self.__class__.__name__} field `{field.name}` cannot be None')
