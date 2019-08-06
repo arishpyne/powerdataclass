@@ -265,8 +265,11 @@ class PowerDataclass(metaclass=PowerDataclassBase):
                 field_value = self.__pdc_type_handlers__[field.type](self, field_value)
             else:
                 if field_value is None:
-                    if field.metadata.get(FieldMeta.NULLABLE, False) or \
-                            field.default is not None or field.default_factory is not None:
+                    # checking for _MISSING_TYPE is discouraged by docs, but this lib do not provide a method
+                    # to determine whether a field has a default. ᕕ( ᐛ )ᕗ
+                    field_has_default = (field.default is not dataclasses._MISSING_TYPE) ^ \
+                                        (field.default_factory  is not dataclasses._MISSING_TYPE)
+                    if field.metadata.get(FieldMeta.NULLABLE, False) or field_has_default:
                         continue
                     else:
                         raise ValueError(f'A value for {self.__class__.__name__} field `{field.name}` cannot be None')
