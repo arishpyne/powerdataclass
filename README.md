@@ -11,6 +11,7 @@ While being nice, the `dataclass` type hinting is only, well, _hinting_.
 This library gives you an ability to create dataclasses with field values automatically casted to 
 the types defined in the `dataclass`'s type hints:
 
+### Typecasting
 ```python
 from powerdataclass import *
 
@@ -67,6 +68,7 @@ t1 = Tensor(**{
 Tensor(vectors=[Vector(items=[1, 2, 3]), Vector(items=[4, 5, 6]), Vector(items=[7, 8, 9])])
 ```
 
+### Custom typecasting
 You can modify the behaviour of type casting by registering two types of handlers on your fancy PowerDataclass:
 * **type handlers**: an unary method marked as a _type handler_ will be applied to any value that has a matching type declared in your dataclass typehints.
 * **field handlers**: an unary method marked as a _field handler_ will be applied to a value of a specific PDC field.
@@ -95,22 +97,43 @@ class CoolBool(PowerDataclass):
 CoolBool(string_bool=True, negated_bool=True)
 ```   
 
+
 Field handlers take precedence over the type handlers.
 Field handlers and type handlers are scoped to a particular Power Dataclass. Inheritance is respected.
 
-If you want to accept `None` as a valid value but also want non-null values to be typecasted you can mark your field as nullable by either setting the corresponding flag in the fields's `metadata` dictionary or using a premade partial:
+### Field Metadata
+The behaviour of fields can be modified by providing corresponding flags in a field's `metadata` dictionary, 
+provided by base Python `dataclasses`.
+
+#### Nullability
+Fields are considered non-nullable by default.
+This means that if, during instantiation, the value of a field will be equal to `None`, a `ValueError` exception will occur.
+Type casting will be performed on non-null values, except for non-typecasted fields (see below)
+  
+If a field has a default value, and it is `None`, it will be considered nullable. 
+Also, if you want to accept `None` but you either don't want to provide defaults at all, provide a non-null default or provide a default factory, you
+you can mark your field as nullable by either setting the flag or using a premade partial:
 
 ```python
 class Nihilus(PowerDataclass):
     x: int = field(metadata={FieldMeta.NULLABLE: True})
-    y: int = nullable_field()
+    y: int = None
+    z: list = nullable_field(default_factory=list)
 
->>> Nihilus(None, None)
-Nihilus(x=None, y=None) 
->>> Nihilus('1', None)
-Nihilus(x=1, y=None)
+>>> Nihilus()
+TypeError: __init__() missing 1 required positional argument: 'x'
+
+>>> Nihilus(1)
+Nihilus(x=1, y=None, z=[])
+
+>>> Nihilus('1', '1', (1,))
+Nihilus(x=1, y=1, z=[1])
+
+>>> Nihilus('1', None, None)
+Nihilus(x=1, y=1, z=None)
 ```
 
+#### Skipping typecasting (and null checking)
 If you want to disable type checking for a specific field you can mark your field as nullable by either setting the corresponding flag in the fields's `metadata` dictionary or using a premade partial:
 
 ```python
@@ -121,7 +144,8 @@ class Noncasted(PowerDataclass):
 >>> Noncasted('1', 2.2)
 Noncasted(x='1', y=2.2)
 ```
-    
+
+#### Dependent and calculated fields
 If some of your field processing requires other fields typecasted before you can declare this field dependencies by name by setting the corresponding value in the fields's `metadata`:
 
 ```python
@@ -212,6 +236,25 @@ True
 * Automatic recursive conversion to dict with the `.as_dict()` method.
 * Automatic recursive conversion to and from JSON strings with the `.as_json()` and `.from_json()`  methods.
 
-
+### PowerConfig
+The `powerdataclass.powerconfig` package contains two premade classes suitable for simple configuration management in your services.
+Those classes are: the `PowerConfig` and it's singleton mode subclass, the `GlobalPowerConfig`
+Both of those share two extensions over regular `PowerDataclass`:
+* an ability to be configured from the OS environment variables by combining the specified in the `PowerDataclass.Meta.envvar_prefix` prefix an the name of the field.
+  ```python
+  class Config(PowerConfig):
+      a: int
+  
+      class Meta:
+          envvar_prefix = "CNF"
+          
+  >>> Config.from_environ()
+  Config(a=5)
+  ```
+  This classmethod will read the OS environment variable `CNF_A`. In this example. it ts assumed that this variable is present  and is equal to `5`.
+* there is a predefined `type_handler` for the `bool` type, which casts string values in  `(y, yes, 1, True)` to `True`.
+ 
+ 
+ 
 ---
 Made with ⚡ by Arish Pyne (https://github.com/arishpyne/powerdataclass)
