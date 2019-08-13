@@ -181,8 +181,6 @@ class PowerDataclassBase(type):
             def get_instance(cls):
                 if cls.__singleton_instance__:
                     return cls.__singleton_instance__
-                else:
-                    raise RuntimeError(f'{klass.__name__} was not instantiated yet!')
 
             klass.__new__ = staticmethod(__singleton__new__)
             klass.get_instance = classmethod(get_instance)
@@ -265,10 +263,8 @@ class PowerDataclass(metaclass=PowerDataclassBase):
                 field_value = self.__pdc_type_handlers__[field.type](self, field_value)
             else:
                 if field_value is None:
-                    # checking for _MISSING_TYPE is discouraged by docs, but this lib do not provide a method
-                    # to determine whether a field has a default. ᕕ( ᐛ )ᕗ
-                    field_has_default = (field.default is not dataclasses._MISSING_TYPE) ^ \
-                                        (field.default_factory  is not dataclasses._MISSING_TYPE)
+                    # Turns out, there _is_ a way to check for a missing default ᕕ( ᐛ )ᕗ
+                    field_has_default = (field.default is not dataclasses.MISSING)
                     if field.metadata.get(FieldMeta.NULLABLE, False) or field_has_default:
                         continue
                     else:
