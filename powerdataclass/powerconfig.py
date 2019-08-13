@@ -28,10 +28,13 @@ class PowerConfig(PowerDataclass):
 
     @classmethod
     def from_environ(cls):
-        envdict = {field.name:
-                       environ.get(f'{cls.Meta.envvar_prefix.upper()}_{field.name.upper()}')
-                   for field in fields(cls) if
-                   not field.metadata.get(PowerConfigFieldMeta.IGNORE_ENVIRON, False)}
+        envdict = {}
+        for field in fields(cls):
+            if not field.metadata.get(PowerConfigFieldMeta.IGNORE_ENVIRON, False):
+                env_key = f'{cls.Meta.envvar_prefix.upper()}_{field.name.upper()}'
+                env_value = environ.get(env_key)
+                if env_value:
+                    envdict.update({field.name: env_value})
 
         return cls(**envdict)
 
