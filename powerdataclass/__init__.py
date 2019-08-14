@@ -166,7 +166,7 @@ class PowerDataclassBase(type):
 
             fields_handling_execution_order = toposort_flatten(fields_handling_dependency_graph)
 
-            return (fields_name_map[field_name] for field_name in fields_handling_execution_order)
+            return [fields_name_map[field_name] for field_name in fields_handling_execution_order]
 
         klass.__pdc_field_handling_order__ = __pdc_determine_field_handling_order__(klass)
 

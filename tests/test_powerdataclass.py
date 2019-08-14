@@ -1,4 +1,5 @@
 import typing
+from enum import Enum
 from json import JSONEncoder, JSONDecoder
 from unittest import mock
 
@@ -329,3 +330,17 @@ def test_pdc_uses_json_decoder_and_encoders_from_meta():
         PDC.from_json('{"n": 1}')
 
     assert loads_mock.call_args[1]['cls'] == CustomJSONDecoder
+
+
+def test_enum_powercasting():
+    class Enumio(Enum):
+        A = 'A'
+        B = 'B'
+
+    class EnumDataclass(PowerDataclass):
+        en: Enumio
+
+    e = EnumDataclass('A')
+    ee = EnumDataclass('B')
+    assert e.en == Enumio.A
+    assert ee.en == Enumio.B
