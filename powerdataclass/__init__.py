@@ -296,6 +296,14 @@ class PowerDataclass(metaclass=PowerDataclassBase):
     def from_json(cls, json_string: str):
         return cls(**json.loads(json_string, cls=cls.Meta.json_decoder))
 
+    def merge(self, other):
+        # Reads another PowerDataclassInstance, replacing the values of this instance fields
+        # with the corresponding fields' values of the other instance, while retaining the memory address
+        # Useful for reloading from disk or database
+
+        for field in dataclasses.fields(other):
+            setattr(self, field.name, getattr(other, field.name))
+
 
 class MissingFieldHandler(Exception):
     """Raised when no registered field handler for calculated field can be found"""

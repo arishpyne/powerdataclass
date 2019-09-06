@@ -344,3 +344,16 @@ def test_enum_powercasting():
     ee = EnumDataclass('B')
     assert e.en == Enumio.A
     assert ee.en == Enumio.B
+
+
+def test_powerdataclass_merge():
+    class PDC(PowerDataclass):
+        x: int
+        y: int
+        z: int
+
+    a = PDC(1, 2, 3)
+    b = PDC(3, 4, 5)
+    a.merge(b)
+    assert id(a) != id(b)
+    assert a.as_dict() == b.as_dict()

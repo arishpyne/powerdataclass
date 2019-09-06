@@ -232,9 +232,30 @@ singleton2 = PDCSingleton(2)
 True
 ```
 
+You can test whether a Singleton has bee instantiated by calling the classmethod `.get_instance()` on your Singleton Mode class.
+If there is an instance, it will be returned. Otherwise, `None` will lbe returned. 
+
 ## Other features
 * Automatic recursive conversion to dict with the `.as_dict()` method.
 * Automatic recursive conversion to and from JSON strings with the `.as_json()` and `.from_json()`  methods.
+
+### PowerDataclass merging
+The `PowerDataclass.merge(other)` allows you to merge two PowerDataclasses, rewriting the fields' values of the first PDC with the corresponding values of the second PDCs, while retaining the memory address of the first PDC.
+
+```python
+class PDC(PowerDataclass):
+    x: int
+    y: int
+    z: int
+
+a = PDC(1, 2, 3)
+b = PDC(3, 4, 5)
+a.merge(b)
+>>> id(a) != id(b)
+True
+>>>a.as_dict() == b.as_dict()
+True
+```
 
 ### PowerConfig
 The `powerdataclass.powerconfig` package contains two premade classes suitable for simple configuration management in your services.
