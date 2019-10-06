@@ -109,10 +109,11 @@ class PowerDataclassDefaultMeta:
 
 class PowerDataclassBase(type):
     def __new__(mcs, name, bases, spec):
+        klass = super().__new__(mcs, name, bases, spec)
         klass_type_handlers = {}
         klass_field_handlers = {}
 
-        for base_klass in bases:
+        for base_klass in klass.__mro__:
             klass_field_handlers.update(getattr(base_klass, '__pdc_field_handlers__', {}))
             klass_type_handlers.update(getattr(base_klass, '__pdc_type_handlers__', {}))
 
@@ -121,8 +122,6 @@ class PowerDataclassBase(type):
                 klass_field_handlers.update({method.__pdc_field_handler_field__: method})
             if hasattr(method, '__pdc_type_handler_type__'):
                 klass_type_handlers.update({method.__pdc_type_handler_type__: method})
-
-        klass = super().__new__(mcs, name, bases, spec)
 
         klass.Meta = collapse_classes((PowerDataclassDefaultMeta,
                                        *(klass.Meta for klass in (*bases, klass) if hasattr(klass, 'Meta'))),

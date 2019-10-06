@@ -85,6 +85,41 @@ def test_pdc_calls_field_handlers_for_registered_fields():
         assert field_y_handler_mock.call_args_list == [mock.call(pdc, 2)]
 
 
+def test_pdc_respects_field_handlers_inheritance_of_arbitrary_depth():
+    field_x_handler_mock = mock.MagicMock()
+    field_y_handler_mock = mock.MagicMock()
+    field_z_handler_mock = mock.MagicMock()
+
+    class PDC_A(PowerDataclass):
+        x: int
+
+        @field_handler('x')
+        def field_x_handler(self, v):
+            return field_x_handler_mock(self, v)
+
+    class PDC_B(PDC_A):
+        y: int
+
+        @field_handler('y')
+        def field_y_handler(self, v):
+            return field_y_handler_mock(self, v)
+
+    class PDC_C(PDC_B):
+        z: int
+
+        @field_handler('z')
+        def field_z_handler(self, v):
+            return field_z_handler_mock(self, v)
+
+    with mock.patch('powerdataclass.powercast', return_value=None) as powercast_mock:
+        pdc = PDC_C('1', 2, '3.0')
+
+        assert powercast_mock.call_args_list == []
+        assert field_x_handler_mock.call_args_list == [mock.call(pdc, '1')]
+        assert field_y_handler_mock.call_args_list == [mock.call(pdc, 2)]
+        assert field_z_handler_mock.call_args_list == [mock.call(pdc, '3.0')]
+
+
 def test_pdc_field_handlers_take_precedence_over_type_handlers():
     field_x_handler_mock = mock.MagicMock()
     field_y_handler_mock = mock.MagicMock()
