@@ -1,9 +1,8 @@
 import dataclasses
 import json
-from copy import copy
 from enum import Enum
 from functools import partial
-from typing import Mapping, Iterable, Any, Callable, TypeVar
+from typing import Mapping, Iterable, Any, Callable, TypeVar, ByteString
 
 from toposort import toposort_flatten
 
@@ -37,7 +36,8 @@ def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = Non
     if dataclasses.is_dataclass(_type):
         if issubclass(value_type, Mapping):
             return _type(**value)
-        elif issubclass(value_type, Iterable):
+        elif issubclass(value_type, Iterable) and not \
+                (issubclass(value_type, ByteString) or issubclass(value_type, str)):
             return _type(*value)
         else:
             try:

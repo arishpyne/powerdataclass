@@ -161,3 +161,23 @@ def test_dataclass_casting_from_a_non_mapping_or_an_non_interable_is_forbidden_i
 
     with pytest.raises(ValueError):
         powercast(1, DC)
+
+
+def test_dataclass_unpack_casting_from_a_string_is_processed_correctly():
+    @dataclasses.dataclass
+    class DC:
+        x: str
+
+
+    v = powercast('abcde', DC)
+    assert v.x == 'abcde'
+
+
+def test_dataclass_unpack_casting_from_bytes_is_processed_correctly():
+    @dataclasses.dataclass
+    class DC:
+        x: bytes
+
+
+    v = powercast(b'abcde', DC)
+    assert v.x == b'abcde'

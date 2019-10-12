@@ -68,6 +68,24 @@ t1 = Tensor(**{
 Tensor(vectors=[Vector(items=[1, 2, 3]), Vector(items=[4, 5, 6]), Vector(items=[7, 8, 9])])
 ```
 
+If a value type is defined as a dataclass and that dataclass can be instantiated with a sole argument,
+it will be casted as well
+
+```python
+class TimestampedIntValue(PowerDataclass):
+    value: int
+    timestamp: int = time.time()
+    
+class SensorReadings(PowerDataclass):
+    moon_phase_angle: TimestampedIntValue
+    mars_surface_temperature: TimestampedIntValue
+
+readings = SensorReadings(122, -70)
+
+>>> readings
+SensorReadings(moon_phase_angle=TimestampedIntValue(value=122, timestamp=1570898094), mars_surface_temperature=TimestampedIntValue(value=-70, timestamp=1570898094))
+```
+
 ### Custom typecasting
 You can modify the behaviour of type casting by registering two types of handlers on your fancy PowerDataclass:
 * **type handlers**: an unary method marked as a _type handler_ will be applied to any value that has a matching type declared in your dataclass typehints.
