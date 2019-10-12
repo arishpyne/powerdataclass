@@ -2,7 +2,7 @@ from os import path
 
 from setuptools import setup, find_packages
 
-from VERSION import __VERSION__
+from powerdataclass.VERSION import __VERSION__
 
 package_name = 'powerdataclass'
 this_directory = path.abspath(path.dirname(__file__))
