@@ -144,10 +144,20 @@ def test_dataclass_casting_from_iterable():
     assert v == DC(1)
 
 
-def test_dataclass_casting_from_a_non_mapping_or_an_non_interable_is_forbidden():
+def test_dataclass_casting_from_a_non_mapping_or_an_non_interable_is_allowed_with_one_arg():
     @dataclasses.dataclass
     class DC:
         x: int
+
+    v = powercast(1, DC)
+    assert v.x == 1
+
+
+def test_dataclass_casting_from_a_non_mapping_or_an_non_interable_is_forbidden_if_uncastable_with_one_arg():
+    @dataclasses.dataclass
+    class DC:
+        x: int
+        y: int
 
     with pytest.raises(ValueError):
         powercast(1, DC)

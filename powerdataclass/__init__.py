@@ -40,10 +40,16 @@ def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = Non
         elif issubclass(value_type, Iterable):
             return _type(*value)
         else:
-            raise ValueError(f'The type of this value is defined as'
-                             f' dataclass {_type.__name__}. To be able to cast the value of '
-                             f'this field to a dataclass instance through args or kwargs unpacking, '
-                             f'it must be an iterable or a mapping respictively, while it is {value_type.__name__} now')
+            try:
+                # let's try direct instantiation with one argument
+                return _type(value)
+            except TypeError:
+                raise ValueError(f'The type of this value is defined as'
+                                 f' dataclass {_type.__name__}. Instantiation with value as sole argument failed.'
+                                 f'To be able to cast the value of '
+                                 f'this field to a dataclass instance through args or kwargs unpacking, '
+                                 f'it must be an iterable or a mapping respectively, '
+                                 f'while it is {value_type.__name__} now')
 
     if field_type_origin in (list, dict, tuple, set, frozenset):
         if field_type_origin in (list, tuple, set, frozenset):
@@ -71,7 +77,7 @@ def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = Non
     elif field_type_origin:
         raise TypeError(f'Casting to a generic type {_type} is forbidden')
     else:
-        # this is not a generic type, rcast directly by instantiating
+        # this is not a generic type, cast directly by instantiating
         return _type(value)
 
 
