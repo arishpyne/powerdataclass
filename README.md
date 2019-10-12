@@ -221,7 +221,7 @@ Currently, the following values are now supported:
 **singleton** | *False* | If *True* enables the [Singleton Mode](#singleton-mode). 
 **json_encoder** | *None* | If set, this class will be used as a `cls` param to `json.dumps` in `PowerDataclass().to_json()` [See docs](https://docs.python.org/3/library/json.html#json.JSONEncoder). 
 **json_decoder** | *None* | If set, this class will be used as a `cls` param to `json.loads` in `PowerDataclass.from_json()` [See docs](https://docs.python.org/3/library/json.html#json.JSONDecoder). 
-
+**as_dict_ignored_when_nested** | *False* |  If set to True, this PDC won't be converted when this PDC is nested and wrapping PDC's `.as_dict()` is called. Can be further ignored if `as_dict(force=True)` was called. 
 
 
 Example of setting the `Meta` of a `PowerDataclass`:

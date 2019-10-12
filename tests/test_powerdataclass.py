@@ -315,6 +315,34 @@ def test_pdc_with_nested_pdcs_recreatable_from_dict_form():
     assert initial == recreated
 
 
+def test_powerdataclass_as_dict_ignore_when_nested_keeps_pdc_class_if_declared_in_meta():
+    class NestedPDC(PowerDataclass):
+        y: int
+
+        class Meta:
+            as_dict_ignore_when_nested = True
+
+    class PDC(PowerDataclass):
+        x: NestedPDC
+
+    a = PDC(NestedPDC(1))
+    assert isinstance(a.as_dict()['x'], NestedPDC)
+
+
+def test_powerdataclass_as_dict_ignore_when_nested_keeps_can_be_forced():
+    class NestedPDC(PowerDataclass):
+        y: int
+
+        class Meta:
+            as_dict_ignore_when_nested = True
+
+    class PDC(PowerDataclass):
+        x: NestedPDC
+
+    a = PDC(NestedPDC(1))
+    assert isinstance(a.as_dict(force=True)['x'], dict)
+
+
 def test_pdc_calculated_field():
     class PDC(PowerDataclass):
         n: int

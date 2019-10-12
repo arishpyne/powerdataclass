@@ -7,6 +7,14 @@ from typing import Mapping, Iterable, Any, Callable, TypeVar, ByteString
 from toposort import toposort_flatten
 
 
+def _is_iterable_but_not_string_type(value_type):
+    return issubclass(value_type, Iterable) and not (issubclass(value_type, ByteString) or issubclass(value_type, str))
+
+
+def _is_iterable_but_not_string(value):
+    return isinstance(value, Iterable) and not (isinstance(value, ByteString) or isinstance(value, str))
+
+
 def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = None) -> Any:
     """
     Casts a `value` to a given `_type`. Descends recursively to cast generic subscripted types.
@@ -36,8 +44,7 @@ def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = Non
     if dataclasses.is_dataclass(_type):
         if issubclass(value_type, Mapping):
             return _type(**value)
-        elif issubclass(value_type, Iterable) and not \
-                (issubclass(value_type, ByteString) or issubclass(value_type, str)):
+        elif _is_iterable_but_not_string_type(value_type):
             return _type(*value)
         else:
             try:
@@ -111,6 +118,7 @@ class PowerDataclassDefaultMeta:
     singleton = False
     json_encoder = None
     json_decoder = None
+    as_dict_ignore_when_nested = False
 
 
 class PowerDataclassBase(type):
@@ -283,16 +291,27 @@ class PowerDataclass(metaclass=PowerDataclassBase):
     def __bound_pdc_type_handlers__(self):
         return {k: partial(v, self) for k, v in self.__pdc_type_handlers__.items()}
 
-    def as_dict(self):
-        asdict_dict = dataclasses.asdict(self)
-        for k, v in asdict_dict.items():
-            if dataclasses.is_dataclass(v):
-                if getattr(v, 'as_dict'):
-                    asdict_dict[k] = v.as_dict()
-                else:
-                    asdict_dict[k] = dataclasses.asdict(v)
+    def as_dict(self, force=False):
+        asdict_dict = {f.name: getattr(self, f.name) for f in dataclasses.fields(self)}
 
-        return asdict_dict
+        def _convert_to_dict(v):
+            if dataclasses.is_dataclass(v):
+                if isinstance(v, PowerDataclass):
+                    if v.Meta.as_dict_ignore_when_nested and not force:
+                        return v
+                    return v.as_dict(force=force)
+                # plain dataclass
+                return dataclasses.asdict(v)
+
+            if _is_iterable_but_not_string(v):
+                return type(v)((_convert_to_dict(i) for i in v))
+            elif isinstance(v, Mapping):
+                return type(v)(**{k: _convert_to_dict(vv) for k, vv in v.items()})
+
+            # in other cases, just return the value as-is
+            return v
+
+        return {k: _convert_to_dict(v) for k, v in asdict_dict.items()}
 
     def as_json(self):
         return json.dumps(self.as_dict(), cls=self.Meta.json_encoder)
