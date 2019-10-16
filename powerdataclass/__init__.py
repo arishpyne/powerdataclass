@@ -313,8 +313,8 @@ class PowerDataclass(metaclass=PowerDataclassBase):
 
         return {k: _convert_to_dict(v) for k, v in asdict_dict.items()}
 
-    def as_json(self):
-        return json.dumps(self.as_dict(), cls=self.Meta.json_encoder)
+    def as_json(self, force=False):
+        return json.dumps(self.as_dict(force), cls=self.Meta.json_encoder)
 
     @classmethod
     def from_json(cls, json_string: str):
