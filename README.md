@@ -275,6 +275,23 @@ True
 True
 ```
 
+### PowerDataclass diff
+A simple dictionary diff can be calculated between thow instances of a same PowerDataclass by using the `.diff()` method
+```python
+class DiffPDC(PowerDataclass):
+    x: int
+    y: int
+    z: int
+
+a = DiffPDC(1, 2, 3)
+b = DiffPDC(3, 4, 5)
+
+>>> a.diff(b)
+{'x': (1, 3), 'y': (2, 4), 'z': (3, 5)}
+```
+
+Note that an attempt to compatre DopwerDataclasses of different type will result a `DiffImpossible` exception
+
 ### PowerConfig
 The `powerdataclass.powerconfig` package contains two premade classes suitable for simple configuration management in your services.
 Those classes are: the `PowerConfig` and it's singleton mode subclass, the `GlobalPowerConfig`

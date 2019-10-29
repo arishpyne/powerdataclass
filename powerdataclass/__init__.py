@@ -321,14 +321,39 @@ class PowerDataclass(metaclass=PowerDataclassBase):
         return cls(**json.loads(json_string, cls=cls.Meta.json_decoder))
 
     def merge(self, other):
-        # Reads another PowerDataclassInstance, replacing the values of this instance fields
-        # with the corresponding fields' values of the other instance, while retaining the memory address
-        # Useful for reloading from disk or database
+        """
+        Reads another PowerDataclassInstance, replacing the values of this instance fields
+        with the corresponding fields' values of the other instance, while retaining the memory address
+        Useful for reloading from disk or database
+        """
 
         for field in dataclasses.fields(other):
             setattr(self, field.name, getattr(other, field.name))
 
+    def diff(self, other):
+        """
+        Returns a simple diff between two PowerDataclasses, provided that tey belong to a same class
+        """
+        if type(self) != type(other):
+            raise DiffImpossible(
+                f"Can't get a diff between an instance of {type(self)} and an instance of f{type(other)}")
+        diff_dict = {}
+        for field in dataclasses.fields(self):
+            self_value = getattr(self, f'{field.name}')
+            other_value = getattr(other, f'{field.name}')
+            if self_value != other_value:
+                diff_dict.update({f'{field.name}': (self_value, other_value)})
+        return diff_dict
 
-class MissingFieldHandler(Exception):
+
+class PowerDataclassException(Exception):
+    pass
+
+
+class MissingFieldHandler(PowerDataclassException):
     """Raised when no registered field handler for calculated field can be found"""
     pass
+
+
+class DiffImpossible(PowerDataclassException):
+    """Raised when an attempt to get a diff between two PowerDataclasses """

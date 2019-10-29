@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 
 from powerdataclass import PowerDataclass, field_handler, type_handler, noncasted_field, \
-    nullable_field, field, FieldMeta, calculated_field, MissingFieldHandler
+    nullable_field, field, FieldMeta, calculated_field, MissingFieldHandler, DiffImpossible
 
 
 def test_pdc_calls_powercast_for_types_not_handled_by_handlers():
@@ -420,3 +420,33 @@ def test_powerdataclass_merge():
     a.merge(b)
     assert id(a) != id(b)
     assert a.as_dict() == b.as_dict()
+
+
+class DiffPDC(PowerDataclass):
+    x: int
+    y: int
+    z: int
+
+
+@pytest.mark.parametrize('one,other,expected_diff', (
+        (DiffPDC(1, 2, 3), DiffPDC(3, 8, 1), {'x': (1, 3), 'y': (2, 8), 'z': (3, 1)}),
+        (DiffPDC(1, 2, 3), DiffPDC(1, 2, 5), {'z': (3, 5)}),
+        (DiffPDC(1, 2, 3), DiffPDC(1, 2, 3), {})
+))
+def test_powerdataclass_diff(one, other, expected_diff):
+    assert one.diff(other) == expected_diff
+
+def test_powerdataclass_diff_uncomparable_types():
+    class DiffPDC1(PowerDataclass):
+        x: int
+        y: int
+        z: int
+
+    class DiffPDC2(PowerDataclass):
+        a: str
+        b: str
+        c: str
+
+    one, other = DiffPDC1(1,2,3), DiffPDC2('a', 'b', 'c')
+    with pytest.raises(DiffImpossible):
+        one.diff(other)
