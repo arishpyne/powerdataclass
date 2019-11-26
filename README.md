@@ -295,7 +295,7 @@ Note that an attempt to compatre DopwerDataclasses of different type will result
 ### PowerConfig
 The `powerdataclass.powerconfig` package contains two premade classes suitable for simple configuration management in your services.
 Those classes are: the `PowerConfig` and it's singleton mode subclass, the `GlobalPowerConfig`
-Both of those share two extensions over regular `PowerDataclass`:
+Both of those share several extensions over regular `PowerDataclass`:
 * an ability to be configured from the OS environment variables by combining the specified in the `PowerDataclass.Meta.envvar_prefix` prefix an the name of the field.
   ```python
   class Config(PowerConfig):
@@ -308,6 +308,7 @@ Both of those share two extensions over regular `PowerDataclass`:
   Config(a=5)
   ```
   This classmethod will read the OS environment variable `CNF_A`. In this example. it ts assumed that this variable is present  and is equal to `5`.
+* an ability to be configured from a JSON file by using `.from_jsonfile()`
 * there is a predefined `type_handler` for the `bool` type, which casts string values in  `(y, yes, 1, True)` to `True`.
  
  

@@ -38,6 +38,12 @@ class PowerConfig(PowerDataclass):
 
         return cls(**envdict)
 
+    @classmethod
+    def from_jsonfile(cls, file_path):
+        with open(file_path) as fd:
+            contents = fd.read()
+        return cls.from_json(contents)
+
     @type_handler
     def __handle_bools__(self, v):
         if isinstance(v, str):
