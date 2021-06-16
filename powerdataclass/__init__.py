@@ -152,12 +152,15 @@ class PowerDataclassBase(type):
                                       unsafe_hash=klass.Meta.dataclass_unsafe_hash,
                                       frozen=klass.Meta.dataclass_frozen,
                                       )
-
+        klass_fields = set()
         for field in dataclasses.fields(klass):
             if field.metadata.get(FieldMeta.DEPENDS_ON_FIELDS, []) and field.name not in klass.__pdc_field_handlers__:
                 raise MissingFieldHandler(f'A field handler must be registered on {klass.__name__} for '
                                           f'a field named `{field.name}` because it is declared as calculatable.')
-
+            klass_fields.add(field.name)
+        
+        klass.__slots__ = klass_fields
+        
         def __pdc_determine_field_handling_order__(cls):
             fields = dataclasses.fields(cls)
 
