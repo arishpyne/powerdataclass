@@ -85,6 +85,7 @@ def test_pdc_calls_field_handlers_for_registered_fields():
         assert field_y_handler_mock.call_args_list == [mock.call(pdc, 2)]
 
 
+# noinspection PyPep8Naming
 def test_pdc_respects_field_handlers_inheritance_of_arbitrary_depth():
     field_x_handler_mock = mock.MagicMock()
     field_y_handler_mock = mock.MagicMock()
@@ -432,9 +433,11 @@ class DiffPDC(PowerDataclass):
         (DiffPDC(1, 2, 3), DiffPDC(3, 8, 1), {'x': (1, 3), 'y': (2, 8), 'z': (3, 1)}),
         (DiffPDC(1, 2, 3), DiffPDC(1, 2, 5), {'z': (3, 5)}),
         (DiffPDC(1, 2, 3), DiffPDC(1, 2, 3), {})
-))
+)
+                         )
 def test_powerdataclass_diff(one, other, expected_diff):
     assert one.diff(other) == expected_diff
+
 
 def test_powerdataclass_diff_uncomparable_types():
     class DiffPDC1(PowerDataclass):
@@ -447,6 +450,6 @@ def test_powerdataclass_diff_uncomparable_types():
         b: str
         c: str
 
-    one, other = DiffPDC1(1,2,3), DiffPDC2('a', 'b', 'c')
+    one, other = DiffPDC1(1, 2, 3), DiffPDC2('a', 'b', 'c')
     with pytest.raises(DiffImpossible):
         one.diff(other)

@@ -1,6 +1,6 @@
 # testing
 pytest
-pycodestyle
+black
 
 # build
 twine

@@ -3,8 +3,7 @@ import json
 from enum import Enum
 from functools import partial
 from typing import Mapping, Iterable, Any, Callable, TypeVar, ByteString
-
-from toposort import toposort_flatten
+from graphlib import TopologicalSorter
 
 
 def _is_iterable_but_not_string_type(value_type):
@@ -19,16 +18,16 @@ def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = Non
     """
     Casts a `value` to a given `_type`. Descends recursively to cast generic subscripted types.
     If target type is a dataclass and value is a mapping, this dataclass will be instantiated by unpacking the mapping.
-    :param value: a value to be casted
+    :param value: a value to be cast
     :param _type: a type to cast the `value` to. Can be either a primitive type (like `bool` or `list`)
     or a generic subscripted type (like `typing.List[int]`).
     Casting to generic non-subscripted types like `typing.List` is forbidden.
-    Casting to generic types, subscripted with TypeVars (like `typing.List[typing.TypeVar('T')`) is forbidden.
+    Casting to generic types, subscripted with TypeVars (like `typing.List[typing.TypeVar('T')`]) is forbidden.
     Casting to generic subscripted types, which are not derived from a primitive type (like `typing.Iterable[str]`)
     is forbidden.
-    :param type_casters: a mapping of {type: callable). If passed, functions from this mapping will be applied to the
+    :param type_casters: a mapping of {type: callable}. If passed, functions from this mapping will be applied to the
     `value` using `_type` as a key.
-    :return: `value` casted to `_type`
+    :return: `value` cast to `_type`
     """
     type_casters = type_casters or {}
 
@@ -56,11 +55,17 @@ def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = Non
                                  f'To be able to cast the value of '
                                  f'this field to a dataclass instance through args or kwargs unpacking, '
                                  f'it must be an iterable or a mapping respectively, '
-                                 f'while it is {value_type.__name__} now')
+                                 f'while it is {value_type.__name__} now'
+                                 )
 
     if field_type_origin in (list, dict, tuple, set, frozenset):
+        # Ensure that for subscriptable types, the types of elements (or keys and values) are defined
+        _type_args = getattr(_type, '__args__', tuple())
+        if not _type_args:
+            raise TypeError(f'Cannot cast to subscriptable types without type annotations for elements')
+
         if field_type_origin in (list, tuple, set, frozenset):
-            item_type = _type.__args__[0]
+            item_type = _type_args[0]
             if type(item_type) == TypeVar:
                 raise TypeError(f'Casting to a TypeVar {_type} is forbidden')
             if not issubclass(value_type, Iterable):
@@ -69,8 +74,8 @@ def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = Non
             return field_type_origin((powercast(item, item_type, type_casters) for item in value))
 
         elif field_type_origin is dict:
-            key_type = _type.__args__[0]
-            value_type = _type.__args__[1]
+            key_type = _type_args[0]
+            value_type = _type_args[1]
             if type(key_type) == TypeVar or type(value_type) == TypeVar:
                 raise TypeError(f'Casting to a TypeVar {_type} is forbidden')
             if not (issubclass(value_type, Mapping) or hasattr(value, 'items')):
@@ -79,7 +84,8 @@ def powercast(value: Any, _type: Any, type_casters: Mapping[Any, Callable] = Non
             return field_type_origin({
                 powercast(key, key_type): powercast(value, value_type, type_casters)
                 for key, value in value.items()
-            })
+            }
+            )
 
     elif field_type_origin:
         raise TypeError(f'Casting to a generic type {_type} is forbidden')
@@ -139,7 +145,8 @@ class PowerDataclassBase(type):
 
         klass.Meta = collapse_classes((PowerDataclassDefaultMeta,
                                        *(klass.Meta for klass in (*bases, klass) if hasattr(klass, 'Meta'))),
-                                      f'Meta', object)
+                                      f'Meta', object
+                                      )
         klass.__pdc_type_handlers__ = klass_type_handlers
         klass.__pdc_field_handlers__ = klass_field_handlers
 
@@ -156,7 +163,8 @@ class PowerDataclassBase(type):
         for field in dataclasses.fields(klass):
             if field.metadata.get(FieldMeta.DEPENDS_ON_FIELDS, []) and field.name not in klass.__pdc_field_handlers__:
                 raise MissingFieldHandler(f'A field handler must be registered on {klass.__name__} for '
-                                          f'a field named `{field.name}` because it is declared as calculatable.')
+                                          f'a field named `{field.name}` because it is declared as calculatable.'
+                                          )
 
         def __pdc_determine_field_handling_order__(cls):
             fields = dataclasses.fields(cls)
@@ -177,7 +185,7 @@ class PowerDataclassBase(type):
                 field.name: set(field.metadata.get(FieldMeta.DEPENDS_ON_FIELDS, {})) for field in fields
             }
 
-            fields_handling_execution_order = toposort_flatten(fields_handling_dependency_graph)
+            fields_handling_execution_order = TopologicalSorter(fields_handling_dependency_graph).static_order()
 
             return [fields_name_map[field_name] for field_name in fields_handling_execution_order]
 
@@ -336,7 +344,8 @@ class PowerDataclass(metaclass=PowerDataclassBase):
         """
         if type(self) != type(other):
             raise DiffImpossible(
-                f"Can't get a diff between an instance of {type(self)} and an instance of f{type(other)}")
+                f"Can't get a diff between an instance of {type(self)} and an instance of f{type(other)}"
+            )
         diff_dict = {}
         for field in dataclasses.fields(self):
             self_value = getattr(self, f'{field.name}')

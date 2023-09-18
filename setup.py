@@ -17,7 +17,7 @@ setup(
     install_requires=['setuptools',
                       'toposort'
                       ],
-    python_requires='>=3.7',
+    python_requires='>=3.11',
     license='MIT',
     author='Arish Pyne',
     author_email='arishpyne@gmail.com',
@@ -25,10 +25,10 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.11',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Typing :: Typed',
     ]
