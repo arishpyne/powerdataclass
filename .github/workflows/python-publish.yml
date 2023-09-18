@@ -9,6 +9,7 @@
 name: Upload Powerdataclass
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
